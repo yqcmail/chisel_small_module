@@ -4,6 +4,31 @@ import chisel3.experimental.{prefix,noPrefix}
 import chisel3.stage.ChiselStage
 import chisel3.experimental.ChiselEnum
 
+//
+//     a: 0000 1101
+//     b: 0010 0000
+//    ----------------
+//  a<<1: 0001 1010
+//     b: 0010 0000
+//                      if(a<<1 >b ):0 
+//    ----------------
+//  a<<1: 0011 0100
+//     b: 0010 0000
+//                      if(a<<1 >b ):1 
+// a-b+1: 0001 0101
+//    ----------------
+//  a<<1: 0010 1010
+//     b: 0010 0000
+//                      if(a<<1 >b ):1 
+// a-b+1: 0000 1011
+//    ----------------
+//  a<<1: 0001 0110
+//     b: 0010 0000
+//                      if(a<<1 >b ):0 
+//    ----------------
+//           1
+//
+//
 class Seq_div_usr(Dw:Int) extends Module with RequireAsyncReset{
   val s_i = IO(Input(UInt(1.W)))  
   val div_a_i  = IO(Input(UInt(Dw.W)))  
@@ -47,8 +72,6 @@ class Seq_div_usr(Dw:Int) extends Module with RequireAsyncReset{
     when(nx_sta === s_idl){
       div_cnt := 0.U
       rg_ext_a := 0.U 
-      rg_div_q := 0.U
-      rg_div_r := 0.U
       rg_don := 0.U
     }.elsewhen(nx_sta === s_div ) {
         rg_don := 0.U
@@ -59,11 +82,11 @@ class Seq_div_usr(Dw:Int) extends Module with RequireAsyncReset{
         }.otherwise{
            div_cnt := div_cnt + 1.U
            rg_ext_a := fun_lt_sub_shift(rg_ext_a)
-           rg_div_q  := rg_div_q | ( Mux(rg_ext_a >= ext_b,true.B,false.B)<<(div_cnt-1.U) )
         }
     }.elsewhen(nx_sta === s_don){
        div_cnt := 0.U
        rg_div_r := rg_ext_a(Dw*2-1,Dw) 
+       rg_div_q := rg_ext_a(Dw-1,0) 
         rg_don := 1.U
     }    
 
@@ -83,7 +106,6 @@ object Main extends App {
     )
 
 }
-
 
 
 

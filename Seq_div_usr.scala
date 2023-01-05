@@ -101,6 +101,7 @@ object Main extends App {
     .emitVerilog(new Seq_div_usr(Dw=4), 
      Array(
         "--target-dir", "../../builds",
+        "-e", "verilog",
         "--emission-options=disableMemRandomization,disableRegisterRandomization"
       )
     )

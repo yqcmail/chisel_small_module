@@ -14,6 +14,10 @@ class Usr_d_mul_x_div_y(Dw:Int) extends Module with RequireAsyncReset{
   val data_o = IO(Output (UInt(Dw.W)))
   val rem_o = IO(Output (UInt(Dw.W)))
   val don_o = IO(Output (UInt(1.W)))
+  
+  val share_add_a = IO(Input (UInt((Dw*2).W)))
+  val share_add_b = IO(Input (UInt((Dw*2).W)))
+  val share_add_o = IO(Output (UInt((Dw*2).W)))
 
    val s_idl :: s_mul_s  ::  s_div_s :: s_end :: s_done :: Nil = Enum(5)
 
@@ -85,8 +89,8 @@ class Usr_d_mul_x_div_y(Dw:Int) extends Module with RequireAsyncReset{
 
  def fun_lt_sub_shift(data_i:UInt ):UInt ={
      val lt_ab    = (data_i >= ext_div_b ) 
-     val lt_div_b = Mux(lt_ab, (( data_i - ext_div_b) + 1.U)   , data_i)
- //    val lt_div_b = Mux(lt_ab, ( com_add_o  + 1.U)   , data_i)
+ //    val lt_div_b = Mux(lt_ab, (( data_i - ext_div_b) + 1.U)   , data_i)
+     val lt_div_b = Mux(lt_ab, ( com_add_o  + 1.U)   , data_i)
      return   lt_div_b<<1
 
    }
@@ -106,16 +110,19 @@ class Usr_d_mul_x_div_y(Dw:Int) extends Module with RequireAsyncReset{
         mul_acc := 0.U
         ext_div_a := 0.U
         rg_don := 0.U
-        com_add_a := 0.U
-        com_add_b := 0.U
+        //com_add_a := 0.U
+        //com_add_b := 0.U
+        com_add_a := share_add_a 
+        com_add_b := share_add_b
         rg_div_r :=  0.U             
     } .elsewhen(rg_state === s_mul_s){
            //mul_acc := mul_acc + fun_mul_bit()
-           mul_acc := rg_buf_d + fun_mul_bit()
+          // mul_acc := rg_buf_d + fun_mul_bit()
+           
            com_add_a := rg_buf_d
            com_add_b := fun_mul_bit()   
-           //mul_acc := com_add_o 
-          
+           mul_acc := com_add_o 
+       
         when( cnt_s >= (Dw-1).asUInt){
           //ext_div_a := mul_acc 
           ext_div_a := rg_buf_d 
@@ -144,7 +151,8 @@ class Usr_d_mul_x_div_y(Dw:Int) extends Module with RequireAsyncReset{
   //////////////////////  
    data_o := rg_div_q 
    don_o := rg_don 
-   rem_o := rg_div_r  
+   rem_o := rg_div_r 
+   share_add_o := Mux(rg_state === s_idl, com_add_o,0.U) 
 }
 
 object Main extends App {
